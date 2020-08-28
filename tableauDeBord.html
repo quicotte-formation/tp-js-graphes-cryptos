@@ -24,17 +24,55 @@
         <option>30</option>
     </select>
     jours
-    <div>
-        <canvas id="graphe1" width="40%"></canvas>
-        <canvas id="graphe2" width="400" height="400"></canvas>
-        <canvas id="graphe3" width="400" height="400"></canvas>
-        <canvas id="graphe4" width="400" height="400"></canvas>
+    <div style="width: 40%;">
+        <canvas id="graphe1"></canvas>
+        <canvas id="graphe2"></canvas>
+        <canvas id="graphe3"></canvas>
+        <canvas id="graphe4"></canvas>
     </div>
     <script>
         let nomBestCryptos = [];
+        let donneesBestCryptos = [];// Chaque elem est 1 tableau avec relevés de la crypto d'indice correspondant
 
-        let afficheGrapheCours = ()=>{
+        let afficheGraphe = (idGraphe, nomChamp)=>{
+            let colors = ['red','green','yellow','blue','pink','orange','ivory','black','purple','grey'];
+            // Récupère dates dans l'ordre
+            let dates = donneesBestCryptos[0].map( elem => elem.date_cours );
 
+            // Construire mes datasets
+            let dataSets = [];// Structure : label, backgroundColor, data
+            for(let i=0;i<nomBestCryptos.length;i++){
+                let dataSet = {
+                    label: nomBestCryptos[i],
+                    data: donneesBestCryptos[i].map( elem=>elem[nomChamp] ),
+                    fill: false,
+                    backgroundColor: colors[i],
+                    borderColor: colors[i]
+                };
+
+                dataSets.push( dataSet );
+            }
+
+            // Construit graphe
+            var ctx = document.getElementById(idGraphe).getContext('2d');
+            var myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: dataSets,
+                },
+                options: {
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: false
+                            }
+                        }]
+                    }
+                }
+            });
+
+            console.log(dataSets);
         };
 
         let afficheGrapheVolumes24 = ()=>{
@@ -103,10 +141,19 @@
                 }
             });
 
+            // Charge les données de meilleures cryptos
+            for(let i=0;i<nomBestCryptos.length;i++){
+
+                let repHttp = await fetch( 'donnees-crypto-par-symbole.php?symbole=' + nomBestCryptos[i] );
+                let donneesSymboleAct = await repHttp.json();
+
+                donneesBestCryptos.push( donneesSymboleAct );
+            }
+
             // Affiche 3 autres graphes
-            afficheGrapheCours();
-            afficheGrapheCoursCap();
-            afficheGrapheVolumes24();
+            afficheGraphe('graphe2','valeur');
+            afficheGraphe('graphe3','market_cap');
+            afficheGraphe('graphe4','volume_24_h');
         }
 
         afficheGrapheVariationsMoyennes();
