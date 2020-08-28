@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+</head>
+<body>
+    <h1>Tableau de bord</h1>
+    Déterminer les
+    <select onchange="afficheGrapheVariationsMoyennes();" id="nbCryptos">
+        <option>5</option>
+        <option>6</option>
+        <option>7</option>
+        <option>8</option>
+        <option>9</option>
+        <option>10</option>
+    </select>
+    cryptos avec la plus grande variation moyenne depuis
+    <select onchange="afficheGrapheVariationsMoyennes();" id="nbJours">
+        <option>1</option>
+        <option>3</option>
+        <option>7</option>
+        <option>30</option>
+    </select>
+    jours
+    <div>
+        <canvas id="graphe1" width="40%"></canvas>
+        <canvas id="graphe2" width="400" height="400"></canvas>
+        <canvas id="graphe3" width="400" height="400"></canvas>
+        <canvas id="graphe4" width="400" height="400"></canvas>
+    </div>
+    <script>
+        let nomBestCryptos = [];
+
+        let afficheGrapheCours = ()=>{
+
+        };
+
+        let afficheGrapheVolumes24 = ()=>{
+
+        };
+
+        let afficheGrapheCoursCap = ()=>{
+
+        };
+
+        let afficheGrapheVariationsMoyennes = async ()=>{
+
+            // Récup nbCryptos et nbJours
+            let nbCryptos = document.querySelector("#nbCryptos").value;
+            let nbJours = document.querySelector("#nbJours").value;
+
+            // Fetch vers ws
+            let repHttp = await fetch('variations-moy-depuis-n-jours.php?nbJours=' + nbJours);
+
+            // Transfo res json vers tableau
+            let tabCryptoEtVariation = await repHttp.json();
+
+            // Trie par ordre croissant de variation
+            tabCryptoEtVariation = tabCryptoEtVariation.sort( (elem1, elem2)=>{
+                let var1 = parseFloat( elem1.pct_variation_24_h );
+                let var2 = parseFloat( elem2.pct_variation_24_h );
+
+                if( var1>var2 ){
+                    return -1;
+                }else if( var1<var2 ){
+                    return 1;
+                }else{
+                    return 0;
+                }
+            } );
+
+            // Récupère les n premières cryptos
+            tabCryptoEtVariation = tabCryptoEtVariation.filter( (elem, i) => {
+                return i<nbCryptos
+            } );
+
+            // Affiche graphe cryptoszEtVariations
+            nomBestCryptos = tabCryptoEtVariation.map( elem => elem.symbole );
+            let variations = tabCryptoEtVariation.map( elem => elem.pct_variation_24_h );
+
+            var ctx = document.getElementById('graphe1').getContext('2d');
+            var myChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: nomBestCryptos,
+                    datasets: [{
+                        label: '# of Votes',
+                        data: variations,
+                        borderWidth: 1,
+                        backgroundColor: ['red','green','yellow','blue','pink','orange','ivory','black','purple','grey']
+                    }]
+                },
+                options: {
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: true
+                            }
+                        }]
+                    }
+                }
+            });
+
+            // Affiche 3 autres graphes
+            afficheGrapheCours();
+            afficheGrapheCoursCap();
+            afficheGrapheVolumes24();
+        }
+
+        afficheGrapheVariationsMoyennes();
+    </script>
+</body>
+</html>
